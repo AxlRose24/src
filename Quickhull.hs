@@ -3,6 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax  #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use const" #-}
 
 module Quickhull (
 
@@ -142,12 +144,18 @@ propagateL = error "TODO: propagateL"
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
 propagateR = error "TODO: propagateR"
 
-shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)                       --begin hier
-shiftHeadFlagsL array = permute (+) (fill (constant (Z:.length array)) 0) func array
-                          where func = undefined
+shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
+shiftHeadFlagsL = stencil f boundary
+                    where f :: Stencil3 Bool -> Exp Bool
+                          f (_,_,r) = r
 
 shiftHeadFlagsR :: Acc (Vector Bool) -> Acc (Vector Bool)
-shiftHeadFlagsR = error "TODO: shiftHeadFlagsR"
+shiftHeadFlagsR = stencil f boundary
+                    where f :: Stencil3 Bool -> Exp Bool
+                          f (l,_,_) = l
+
+boundary :: Boundary (Vector Bool)
+boundary = function (\_ -> True_)
 
 segmentedScanl1 :: Elt a => (Exp a -> Exp a -> Exp a) -> Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
 segmentedScanl1 = error "TODO: segmentedScanl1"
