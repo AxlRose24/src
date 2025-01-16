@@ -156,6 +156,7 @@ shiftHeadFlagsR = stencil f boundary
                     where f :: Stencil3 Bool -> Exp Bool
                           f (l,_,_) = l
 
+-- boundary for the stencil function is shiftHeadFlagsL and shiftHeadFlagsR
 boundary :: Boundary (Vector Bool)
 boundary = function (\_ -> True_)
 
