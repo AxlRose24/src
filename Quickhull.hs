@@ -5,6 +5,8 @@
 {-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use const" #-}
+{-# HLINT ignore "Avoid lambda" #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Quickhull (
 
@@ -70,7 +72,7 @@ initialPartition points =
       p2 = --error "TODO: locate the right-most point"
            let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
            in uncurry T2 (the point)
-           
+
       isUpper :: Acc (Vector Bool)
       isUpper = --error "TODO: determine which points lie above the line (p₁, p₂)"
                 map func points
@@ -139,10 +141,10 @@ quickhull =
 -- ----------------
 
 propagateL :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateL = error "TODO: propagateL"
+propagateL headFlags values = undefined
 
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateR = error "TODO: propagateR"
+propagateR headFlags values = undefined
 
 shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
 shiftHeadFlagsL = stencil f boundary
@@ -158,10 +160,12 @@ boundary :: Boundary (Vector Bool)
 boundary = function (\_ -> True_)
 
 segmentedScanl1 :: Elt a => (Exp a -> Exp a -> Exp a) -> Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-segmentedScanl1 = error "TODO: segmentedScanl1"
+segmentedScanl1 f headFlags values = map snd (scanl1 (segmented f) tuples)
+                                    where tuples = zip headFlags values
 
 segmentedScanr1 :: Elt a => (Exp a -> Exp a -> Exp a) -> Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-segmentedScanr1 = error "TODO: segmentedScanr1"
+segmentedScanr1 f headFlags values = map snd (scanr1 (segmented f) tuples)
+                                    where tuples = zip headFlags values
 
 
 -- Given utility functions
