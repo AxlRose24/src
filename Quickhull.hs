@@ -66,16 +66,16 @@ initialPartition :: Acc (Vector Point) -> Acc SegmentedPoints
 initialPartition points =
   let
       p1, p2 :: Exp Point
-      p1 = --error "TODO: locate the left-most point"
-           let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
+      --locate the left-most point"
+      p1 = let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
            in uncurry T2 (the point)
-      p2 = --error "TODO: locate the right-most point"
-           let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
+      --locate the right-most point"
+      p2 = let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
            in uncurry T2 (the point)
 
+      --determine which points lie above the line (p₁, p₂)"
       isUpper :: Acc (Vector Bool)
-      isUpper = --error "TODO: determine which points lie above the line (p₁, p₂)"
-                map func points
+      isUpper = map func points
                   where func point = let dx = fst p2 - fst p1
                                          dy = snd p2 - snd p1
                                          mx = fst point - fst p1
@@ -83,9 +83,9 @@ initialPartition points =
                                          cross = dx * my - dy * mx
                                      in cross < 0
 
+      --determine which points lie below the line (p₁, p₂)"
       isLower :: Acc (Vector Bool)
-      isLower = --error "TODO: determine which points lie below the line (p₁, p₂)"
-                map func points
+      isLower = map func points
                   where func point = let dx = fst p2 - fst p1
                                          dy = snd p2 - snd p1
                                          mx = fst point - fst p1
@@ -156,7 +156,7 @@ shiftHeadFlagsR = stencil f boundary
                     where f :: Stencil3 Bool -> Exp Bool
                           f (l,_,_) = l
 
--- boundary for the stencil function is shiftHeadFlagsL and shiftHeadFlagsR
+-- boundary for the stencil function in shiftHeadFlagsL and shiftHeadFlagsR
 boundary :: Boundary (Vector Bool)
 boundary = function (\_ -> True_)
 
