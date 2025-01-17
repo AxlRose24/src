@@ -7,6 +7,7 @@
 {-# HLINT ignore "Use const" #-}
 {-# HLINT ignore "Avoid lambda" #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# HLINT ignore "Redundant flip" #-}
 
 module Quickhull (
 
@@ -66,16 +67,16 @@ initialPartition :: Acc (Vector Point) -> Acc SegmentedPoints
 initialPartition points =
   let
       p1, p2 :: Exp Point
-      p1 = --error "TODO: locate the left-most point"
-           let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
+      -- locates the left-most point"
+      p1 = let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
            in uncurry T2 (the point)
-      p2 = --error "TODO: locate the right-most point"
-           let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
+      -- locates the right-most point"
+      p2 = let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
            in uncurry T2 (the point)
 
+      -- determines which points lie above the line (p₁, p₂)"
       isUpper :: Acc (Vector Bool)
-      isUpper = --error "TODO: determine which points lie above the line (p₁, p₂)"
-                map func points
+      isUpper = map func points
                   where func point = let dx = fst p2 - fst p1
                                          dy = snd p2 - snd p1
                                          mx = fst point - fst p1
@@ -83,9 +84,9 @@ initialPartition points =
                                          cross = dx * my - dy * mx
                                      in cross < 0
 
+      -- determines which points lie below the line (p₁, p₂)"
       isLower :: Acc (Vector Bool)
-      isLower = --error "TODO: determine which points lie below the line (p₁, p₂)"
-                map func points
+      isLower = map func points
                   where func point = let dx = fst p2 - fst p1
                                          dy = snd p2 - snd p1
                                          mx = fst point - fst p1
@@ -144,7 +145,7 @@ propagateL :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
 propagateL = segmentedScanl1 const
 
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateR = segmentedScanr1 (flip const)
+propagateR = segmentedScanr1 (flip const) --segmentedScanr1 P.seq  (?)
 
 shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
 shiftHeadFlagsL = stencil f boundary
