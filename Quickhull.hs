@@ -8,6 +8,7 @@
 {-# HLINT ignore "Avoid lambda" #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# HLINT ignore "Redundant flip" #-}
+{-# HLINT ignore "Use head" #-}
 
 module Quickhull (
 
@@ -94,24 +95,27 @@ initialPartition points =
                                          cross = dx * my - dy * mx
                                      in cross > 0
 
-      offsetUpper :: Acc (Vector Int)
-      countUpper  :: Acc (Scalar Int)
+      offsetUpper :: Acc (Vector Int) -- relative index of points above the line
+      countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper = T2 o c
                                     where c = unit (length (afst (filter P.id isUpper)))
                                           o = undefined
 
-      offsetLower :: Acc (Vector Int)
-      countLower  :: Acc (Scalar Int)
-      T2 offsetLower countLower = error "TODO: number of points below the line and their relative index"
+      offsetLower :: Acc (Vector Int) -- relative index of points below the line
+      countLower  :: Acc (Scalar Int) -- number of points below the line
+      T2 offsetLower countLower = T2 o c
+                                    where c = unit (length (afst (filter P.id isLower)))
+                                          o = undefined
 
-      destination :: Acc (Vector (Maybe DIM1))
-      destination = error "TODO: compute the index in the result array for each point (if it is present)"
+      destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present)
+      destination = undefined 
 
-      newPoints :: Acc (Vector Point)
-      newPoints = error "TODO: place each point into its corresponding segment of the result"
+      newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
+      newPoints = undefined
 
-      headFlags :: Acc (Vector Bool)
-      headFlags = error "TODO: create head flags array demarcating the initial segments"
+      headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
+      headFlags = trueFlag ++ isUpper ++ trueFlag ++ isLower ++ trueFlag
+                    where trueFlag = use (fromList (Z:.1) [True])
   in
   T2 headFlags newPoints
 
