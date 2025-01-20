@@ -99,16 +99,16 @@ initialPartition points =
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper = T2 o c
                                     where c = unit (length (afst (filter P.id isUpper)))
-                                          o = undefined
+                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int)
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
       T2 offsetLower countLower = T2 o c
                                     where c = unit (length (afst (filter P.id isLower)))
-                                          o = undefined
+                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
 
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present)
-      destination = undefined 
+      destination = undefined
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
       newPoints = undefined
