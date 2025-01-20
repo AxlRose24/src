@@ -108,7 +108,8 @@ initialPartition points =
                                           o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
 
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present)
-      destination = undefined
+      destination = undefined -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
+                    where size = the countLower + the countUpper + 3
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
       newPoints = undefined
