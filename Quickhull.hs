@@ -7,6 +7,8 @@
 {-# HLINT ignore "Use const" #-}
 {-# HLINT ignore "Avoid lambda" #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# HLINT ignore "Redundant flip" #-}
+{-# HLINT ignore "Use head" #-}
 
 module Quickhull (
 
@@ -65,52 +67,60 @@ readInputFile filename = (\l -> fromList (Z :. P.length l) l) P.. P.map (\l -> l
 initialPartition :: Acc (Vector Point) -> Acc SegmentedPoints
 initialPartition points =
   let
-      p1, p2 :: Exp Point
-      --locate the left-most point"
-      p1 = let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
-           in uncurry T2 (the point)
-      --locate the right-most point"
-      p2 = let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
-           in uncurry T2 (the point)
+      p1, p2 :: (Exp DIM1, Exp Point)
+      -- locates the left-most point"
+      p1 = let point = fold1All (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (indexed points)
+           in (fst (the point), uncurry T2 (snd (the point)))
+      -- locates the right-most point"
+      p2 = let point = fold1All (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (indexed points)
+           in (fst (the point), uncurry T2 (snd (the point)))
 
-      --determine which points lie above the line (p₁, p₂)"
+      -- determines which points lie above the line (p₁, p₂)"
       isUpper :: Acc (Vector Bool)
       isUpper = map func points
-                  where func point = let dx = fst p2 - fst p1
-                                         dy = snd p2 - snd p1
-                                         mx = fst point - fst p1
-                                         my = snd point - snd p1
+                  where func point = let dx = fst point2 - fst point1
+                                         dy = snd point2 - snd point1
+                                         mx = fst point - fst point1
+                                         my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross < 0
+                                      where point1 = P.snd p1
+                                            point2 = P.snd p2
 
-      --determine which points lie below the line (p₁, p₂)"
+      -- determines which points lie below the line (p₁, p₂)"
       isLower :: Acc (Vector Bool)
       isLower = map func points
-                  where func point = let dx = fst p2 - fst p1
-                                         dy = snd p2 - snd p1
-                                         mx = fst point - fst p1
-                                         my = snd point - snd p1
+                  where func point = let dx = fst point2 - fst point1
+                                         dy = snd point2 - snd point1
+                                         mx = fst point - fst point1
+                                         my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross > 0
+                                      where point1 = P.snd p1
+                                            point2 = P.snd p2
 
-      offsetUpper :: Acc (Vector Int)
-      countUpper  :: Acc (Scalar Int)
+      offsetUpper :: Acc (Vector Int) -- relative index of points above the line
+      countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper = T2 o c
                                     where c = unit (length (afst (filter P.id isUpper)))
-                                          o = undefined
+                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
 
-      offsetLower :: Acc (Vector Int)
-      countLower  :: Acc (Scalar Int)
-      T2 offsetLower countLower = error "TODO: number of points below the line and their relative index"
+      offsetLower :: Acc (Vector Int) -- relative index of points below the line
+      countLower  :: Acc (Scalar Int) -- number of points below the line
+      T2 offsetLower countLower = T2 o c
+                                    where c = unit (length (afst (filter P.id isLower)))
+                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
 
-      destination :: Acc (Vector (Maybe DIM1))
-      destination = error "TODO: compute the index in the result array for each point (if it is present)"
+      destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present)
+      destination = undefined -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
+                    where size = the countLower + the countUpper + 3
 
-      newPoints :: Acc (Vector Point)
-      newPoints = error "TODO: place each point into its corresponding segment of the result"
+      newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
+      newPoints = undefined
 
-      headFlags :: Acc (Vector Bool)
-      headFlags = error "TODO: create head flags array demarcating the initial segments"
+      headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
+      headFlags = trueFlag ++ isUpper ++ trueFlag ++ isLower ++ trueFlag
+                    where trueFlag = use (fromList (Z:.1) [True])
   in
   T2 headFlags newPoints
 
@@ -141,10 +151,10 @@ quickhull =
 -- ----------------
 
 propagateL :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateL headFlags values = undefined
+propagateL = segmentedScanl1 const
 
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateR headFlags values = undefined
+propagateR = segmentedScanr1 (flip const) --segmentedScanr1 P.seq  (?)
 
 shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
 shiftHeadFlagsL = stencil f boundary
