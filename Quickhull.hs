@@ -67,39 +67,43 @@ readInputFile filename = (\l -> fromList (Z :. P.length l) l) P.. P.map (\l -> l
 initialPartition :: Acc (Vector Point) -> Acc SegmentedPoints
 initialPartition points =
   let
-      p1, p2 :: Exp Point
+      p1, p2 :: (Exp DIM1, Exp Point)
       -- locates the left-most point"
-      p1 = let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
-           in uncurry T2 (the point)
+      p1 = let point = fold1All (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (indexed points)
+           in (fst (the point), uncurry T2 (snd (the point)))
       -- locates the right-most point"
-      p2 = let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
-           in uncurry T2 (the point)
+      p2 = let point = fold1All (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (indexed points)
+           in (fst (the point), uncurry T2 (snd (the point)))
 
       -- determines which points lie above the line (p₁, p₂)"
       isUpper :: Acc (Vector Bool)
       isUpper = map func points
-                  where func point = let dx = fst p2 - fst p1
-                                         dy = snd p2 - snd p1
-                                         mx = fst point - fst p1
-                                         my = snd point - snd p1
+                  where func point = let dx = fst point2 - fst point1
+                                         dy = snd point2 - snd point1
+                                         mx = fst point - fst point1
+                                         my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross < 0
+                                      where point1 = P.snd p1
+                                            point2 = P.snd p2
 
       -- determines which points lie below the line (p₁, p₂)"
       isLower :: Acc (Vector Bool)
       isLower = map func points
-                  where func point = let dx = fst p2 - fst p1
-                                         dy = snd p2 - snd p1
-                                         mx = fst point - fst p1
-                                         my = snd point - snd p1
+                  where func point = let dx = fst point2 - fst point1
+                                         dy = snd point2 - snd point1
+                                         mx = fst point - fst point1
+                                         my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross > 0
+                                      where point1 = P.snd p1
+                                            point2 = P.snd p2
 
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper = T2 o c
                                     where c = unit (length (afst (filter P.id isUpper)))
-                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int)
+                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
