@@ -122,7 +122,7 @@ initialPartition points =
                           r = zip isUpper isLower
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
-      newPoints = scatter undefined (fill (constant (Z:.P.fromEnum fullSize)) undefined) points
+      newPoints = scatter undefined (fill (constant (Z:.P.fromEnum fullSize)) (T2 0 0)) points
                       where fullSize = length destination
                             --dest = afst (justs destination) :: Acc (Vector Int)
 
