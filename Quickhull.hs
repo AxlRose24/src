@@ -10,6 +10,7 @@
 {-# HLINT ignore "Redundant flip" #-}
 {-# HLINT ignore "Use head" #-}
 {-# HLINT ignore "Use second" #-}
+{-# HLINT ignore "Evaluate" #-}
 
 module Quickhull (
 
@@ -117,19 +118,20 @@ initialPartition points =
 
       -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
-      destination = undefined -- permute undefined undefined undefined undefined
+      destination = undefined
                     where fullSize = the countLower + the countUpper + 3
                           r = zip isUpper isLower
+                          --test = permute undefined (fill (constant (Z:.fullSize)) Nothing_) (\x -> ) undefined
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
-      newPoints = scatter undefined (fill (constant (Z:.P.fromEnum fullSize)) (T2 0 0)) points
+      newPoints = gather undefined points
                       where fullSize = length destination
                             --dest = afst (justs destination) :: Acc (Vector Int)
 
       headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
       headFlags = scatter undefined (fill (constant (Z:.fullSize)) True_) (fill (constant (Z:.fullSize)) False_)
                       where fullSize = P.fromEnum (length destination)
-                            --dest = scanl1 (\l _ -> l)
+                            --dest = scanl1 (\l r -> fromJust l) destination
   in
   T2 headFlags newPoints
 
@@ -152,8 +154,9 @@ partition (T2 headFlags points) =
 -- no undecided points remaining. What remains is the convex hull.
 --
 quickhull :: Acc (Vector Point) -> Acc (Vector Point)
-quickhull =
-  error "TODO: quickhull"
+quickhull points = loop initPart
+                    where initPart = initialPartition points
+                          loop part = if length (afst part) >= 3 then loop (partition part) else asnd initPart
 
 
 -- Helper functions
