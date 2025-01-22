@@ -9,6 +9,7 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# HLINT ignore "Redundant flip" #-}
 {-# HLINT ignore "Use head" #-}
+{-# HLINT ignore "Use second" #-}
 
 module Quickhull (
 
@@ -28,6 +29,7 @@ module Quickhull (
 import Data.Array.Accelerate
 import Data.Array.Accelerate.Debug.Trace
 import qualified Prelude                      as P
+import Data.Array.Accelerate.Data.Maybe
 
 
 -- Points and lines in two-dimensional space
@@ -101,26 +103,33 @@ initialPartition points =
 
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
-      T2 offsetUpper countUpper = T2 o c
-                                    where c = unit (length (afst (filter P.id isUpper)))
-                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
+      T2 offsetUpper countUpper = T2 offset (unit count)
+                                    where count = length (afst (filter P.id isUpper))
+                                          offset = scanl (\l _ -> l + 1) 0 (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
+                                          --o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
-      T2 offsetLower countLower = T2 o c
-                                    where c = unit (length (afst (filter P.id isLower)))
-                                          o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
+      T2 offsetLower countLower = T2 offset (unit count)
+                                    where count = length (afst (filter P.id isLower))
+                                          offset = scanl (\l _ -> l + 1) (the countUpper + 2) (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
+                                          --o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
 
-      destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present)
-      destination = undefined -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
-                    where size = the countLower + the countUpper + 3
+      -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
+      destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
+      destination = undefined -- permute undefined undefined undefined undefined
+                    where fullSize = the countLower + the countUpper + 3
+                          r = zip isUpper isLower
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
-      newPoints = undefined
+      newPoints = scatter undefined (fill (constant (Z:.P.fromEnum fullSize)) undefined) points
+                      where fullSize = length destination
+                            --dest = afst (justs destination) :: Acc (Vector Int)
 
       headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
-      headFlags = trueFlag ++ isUpper ++ trueFlag ++ isLower ++ trueFlag
-                    where trueFlag = use (fromList (Z:.1) [True])
+      headFlags = scatter undefined (fill (constant (Z:.fullSize)) True_) (fill (constant (Z:.fullSize)) False_)
+                      where fullSize = P.fromEnum (length destination)
+                            --dest = scanl1 (\l _ -> l)
   in
   T2 headFlags newPoints
 
