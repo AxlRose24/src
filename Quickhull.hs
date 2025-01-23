@@ -105,13 +105,13 @@ initialPartition points =
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper =  T2 offset count
-                                   where offset = scanl (+) 0 (map (\b -> if b then 1 else 0) isUpper)
+                                   where offset = tail (scanl (+) 0 (map (\b -> if b then 1 else 0) isUpper))
                                          count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
       T2 offsetLower countLower = T2 offset count
-                                    where offset = scanl (+) (the countUpper + 1) (map (\b -> if b then 1 else 0) isLower)
+                                    where offset = tail (scanl (+) (the countUpper + 1) (map (\b -> if b then 1 else 0) isLower))
                                           count = fold1All (+) (map (\elem -> if elem then 1 else 0) isLower)
 
       -- p1 -> 0 and size + 1, p2 -> the countUpper + 1
