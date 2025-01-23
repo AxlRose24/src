@@ -104,17 +104,18 @@ initialPartition points =
 
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
-      T2 offsetUpper countUpper = T2 offset (unit count)
-                                    where count = length (afst (filter P.id isUpper))
-                                          offset = scanl (\l _ -> l + 1) 0 (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
-                                          --o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isUpper)) :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
+      T2 offsetUpper countUpper = T2 offset count
+                                    where --count = length (afst (filter P.id isUpper))
+                                          count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
+                                          --offset = scanl (\l _ -> l + 1) 0 (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
+                                          offset = imap (\index element -> if element then shapeSize index else -1) isUpper :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
-      T2 offsetLower countLower = T2 offset (unit count)
-                                    where count = length (afst (filter P.id isLower))
-                                          offset = scanl (\l _ -> l + 1) (the countUpper + 2) (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
-                                          --o = afst (filter (>=0) (imap (\index element -> if element then shapeSize index else -1) isLower)) :: Acc (Vector Int)
+      T2 offsetLower countLower = T2 offset count
+                                    where count = fold1All (+) (map (\elem -> if elem then 1 else 0) isLower)
+                                          --offset = scanl (\l _ -> l + 1) (the countUpper + 2) (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
+                                          offset = imap (\index element -> if element then shapeSize index else -1) isLower :: Acc (Vector Int)
 
       -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
