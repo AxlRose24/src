@@ -104,37 +104,31 @@ initialPartition points =
 
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
-      T2 offsetUpper countUpper = T2 offset count
-                                    where count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
-                                          offset = scanl1 (+) (map (\b -> if b then 1 else 0) isUpper)
+      T2 offsetUpper countUpper =  T2 offset count
+                                   where offset = scanl (+) 0 (map (\b -> if b then 1 else 0) isUpper)
+                                         count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
       T2 offsetLower countLower = T2 offset count
-                                    where count = fold1All (+) (map (\elem -> if elem then 1 else 0) isLower)
-                                          offset = scanl1 (+) (map (\b -> if b then 1 else 0) isLower)
+                                    where offset = scanl (+) (the countUpper + 1) (map (\b -> if b then 1 else 0) isLower)
+                                          count = fold1All (+) (map (\elem -> if elem then 1 else 0) isLower)
 
-      -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
+      -- p1 -> 0 and size + 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
       destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index)) 
                           else if isLower!index then Just_ (I1 (offsetLower!index)) 
                           else if point == P.snd p1 then Just_ (I1 0) 
                           else if point == P.snd p2 then Just_ (I1 (the countUpper + 1)) 
                           else Nothing_) points
-                    where fullSize = the countLower + the countUpper + 3
-                          r = zip isUpper isLower
-                          list = zip3 points isUpper isLower
-                          --test = permute undefined (fill (constant (Z:.fullSize)) Nothing_) (\x -> ) undefined
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
-      newPoints = gather undefined points
-                      where fullSize = length destination
-                            --dest = afst (justs destination) :: Acc (Vector Int)
+      newPoints = permute (\point _ -> point) (fill (constant (Z:.fullSize)) (T2 0 0)) (\ix -> destination!ix) points
+                    where fullSize = P.fromEnum (the countUpper + the countLower + 3)
 
       headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
-      headFlags = scatter undefined (fill (constant (Z:.fullSize)) True_) (fill (constant (Z:.fullSize)) False_)
-                      where fullSize = P.fromEnum (length destination)
-                            --dest = scanl1 (\l r -> fromJust l) destination
+      headFlags = permute (\true _ -> true) (fill (constant (Z:. fullSize)) False_) (\ix -> destination!ix) (fill (constant (Z:. fullSize)) True_)
+                    where fullSize = P.fromEnum (the countUpper + the countLower + 3)
   in
   T2 headFlags newPoints
 
