@@ -105,23 +105,25 @@ initialPartition points =
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
       T2 offsetUpper countUpper = T2 offset count
-                                    where --count = length (afst (filter P.id isUpper))
-                                          count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
-                                          --offset = scanl (\l _ -> l + 1) 0 (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
-                                          offset = imap (\index element -> if element then shapeSize index else -1) isUpper :: Acc (Vector Int) --misschien moet shapeSize index +1 of -1
+                                    where count = fold1All (+) (map (\elem -> if elem then 1 else 0) isUpper)
+                                          offset = scanl1 (+) (map (\b -> if b then 1 else 0) isUpper)
 
       offsetLower :: Acc (Vector Int) -- relative index of points below the line
       countLower  :: Acc (Scalar Int) -- number of points below the line
       T2 offsetLower countLower = T2 offset count
                                     where count = fold1All (+) (map (\elem -> if elem then 1 else 0) isLower)
-                                          --offset = scanl (\l _ -> l + 1) (the countUpper + 2) (fill (constant (Z:.P.fromEnum count)) 0) :: Acc (Vector Int)
-                                          offset = imap (\index element -> if element then shapeSize index else -1) isLower :: Acc (Vector Int)
+                                          offset = scanl1 (+) (map (\b -> if b then 1 else 0) isLower)
 
       -- p1 -> 0 and size - 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
-      destination = undefined
+      destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index)) 
+                          else if isLower!index then Just_ (I1 (offsetLower!index)) 
+                          else if point == P.snd p1 then Just_ (I1 0) 
+                          else if point == P.snd p2 then Just_ (I1 (the countUpper + 1)) 
+                          else Nothing_) points
                     where fullSize = the countLower + the countUpper + 3
                           r = zip isUpper isLower
+                          list = zip3 points isUpper isLower
                           --test = permute undefined (fill (constant (Z:.fullSize)) Nothing_) (\x -> ) undefined
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
