@@ -153,9 +153,8 @@ partition (T2 headFlags points) =
 quickhull :: Acc (Vector Point) -> Acc (Vector Point)
 quickhull points = loop initPart
                     where initPart = initialPartition points
-                          loop part = if predicate then asnd part else loop newPart
-                                   where newPart = partition part
-                                         predicate = the (and (afst newPart))
+                          loop part = if predicate then asnd part else loop (partition part)
+                                   where predicate = the (and (afst part))
 
 
 -- Helper functions
