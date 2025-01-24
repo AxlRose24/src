@@ -127,8 +127,7 @@ initialPartition points =
                     where fullSize = P.fromEnum (the countUpper + the countLower) + 3
 
       headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
-      headFlags = permute (\true _ -> true) (fill (constant (Z:. fullSize)) False_) (\ix -> destination!ix) (fill (constant (Z:. fullSize)) True_)
-                    where fullSize = P.fromEnum (the countUpper + the countLower) + 3
+      headFlags = map (\point -> if point == p1 || point == p2 then True_ else False_) newPoints
   in
   T2 headFlags newPoints
 
@@ -144,9 +143,8 @@ initialPartition points =
 --
 partition :: Acc SegmentedPoints -> Acc SegmentedPoints
 partition (T2 headFlags points) = undefined
-                                     where findP3 = undefined :: (Exp a -> Exp a -> Exp a)
-                                           test = segmentedScanl1 findP3 headFlags points
-
+                                     where pointDistance a b p = (1/2) * abs ((P.fst a - P.fst p) * (P.snd b - P.snd a) - (P.fst a - P.fst b) * (P.snd p - P.snd a))
+                                           --findP3 p1 p2 = scanl1 (\x -> pointDistance p1 p2 x) points
 
 -- The completed algorithm repeatedly partitions the points until there are
 -- no undecided points remaining. What remains is the convex hull.
@@ -165,7 +163,7 @@ propagateL :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
 propagateL = segmentedScanl1 const
 
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateR = segmentedScanr1 (flip const) --segmentedScanr1 P.seq  (?)
+propagateR = segmentedScanr1 (flip const)
 
 shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
 shiftHeadFlagsL = stencil f boundary
