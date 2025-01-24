@@ -143,8 +143,9 @@ initialPartition points =
 --
 partition :: Acc SegmentedPoints -> Acc SegmentedPoints
 partition (T2 headFlags points) = undefined
-                                     where pointDistance a b p = (1/2) * abs ((P.fst a - P.fst p) * (P.snd b - P.snd a) - (P.fst a - P.fst b) * (P.snd p - P.snd a))
-                                           --findP3 p1 p2 = scanl1 (\x -> pointDistance p1 p2 x) points
+                                     where pointDistance :: Exp Point -> Exp Point -> Exp Point -> Exp Int
+                                           pointDistance a b p = abs ((fst a - fst p) * (snd b - snd a) - (fst a - fst b) * (snd p - snd a)) -- neglected (1/2) * because it is irrelevant and doesn't work
+                                           findP3 p1 p2 ps = maximum (map (\x -> pointDistance p1 p2 x) ps)
 
 -- The completed algorithm repeatedly partitions the points until there are
 -- no undecided points remaining. What remains is the convex hull.
