@@ -169,7 +169,7 @@ quickhull :: Acc (Vector Point) -> Acc (Vector Point)
 quickhull points = loop initPart
                     where initPart = initialPartition points
                           loop part = if predicate then asnd part else loop (partition part)
-                                   where predicate = the (and (afst part))
+                                   where predicate = the (and (afst part)) -- checks whether there are still falses in the headFlags
 
 
 -- Helper functions
