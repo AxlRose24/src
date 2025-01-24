@@ -118,7 +118,7 @@ initialPartition points =
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
       destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index))
                           else if isLower!index then Just_ (I1 (offsetLower!index))
-                          else if point == p1 then Just_ (I1 0)
+                          else if point == p1 then Just_ (I1 0) -- currently only has p1 at the start, and not also at the end
                           else if point == p2 then Just_ (I1 (the countUpper + 1))
                           else Nothing_) points
 
@@ -153,7 +153,7 @@ partition (T2 headFlags points) = let newPoints = segmentedScanl1 undefined head
 pointsOutOfLines :: Exp Point -> Exp Point -> Exp Point -> Exp Point -> Exp Bool
 pointsOutOfLines p1 p2 p3 point = pointIsLeftOfLine (T2 p1 p3) point || pointIsRightOfLine (T2 p2 p3) point
 
--- returns True if the point is to the right of the line, used in pointIsNotOnLine so that points on the line
+-- returns True if the point is to the right of the line
 pointIsRightOfLine :: Exp Line -> Exp Point -> Exp Bool
 pointIsRightOfLine (T2 (T2 x1 y1) (T2 x2 y2)) (T2 x y) = nx * x + ny * y < c
   where
