@@ -70,13 +70,13 @@ readInputFile filename = (\l -> fromList (Z :. P.length l) l) P.. P.map (\l -> l
 initialPartition :: Acc (Vector Point) -> Acc SegmentedPoints
 initialPartition points =
   let
-      p1, p2 :: (Exp DIM1, Exp Point)
-      -- locates the left-most point"
-      p1 = let point = fold1All (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (indexed points)
-           in (fst (the point), uncurry T2 (snd (the point)))
-      -- locates the right-most point"
-      p2 = let point = fold1All (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (indexed points)
-           in (fst (the point), uncurry T2 (snd (the point)))
+      p1, p2 :: Exp Point
+      p1 = -- locate the left-most point"
+           let point = foldAll (\point1 point2 -> if fst point1 < fst point2 then point1 else point2) (points !! 0) point
+           in uncurry T2 (the point)
+      p2 = -- locate the right-most point"
+           let point = foldAll (\point1 point2 -> if fst point1 > fst point2 then point1 else point2) (points !! 0) point
+           in uncurry T2 (the point)
 
       -- determines which points lie above the line (p₁, p₂)"
       isUpper :: Acc (Vector Bool)
@@ -87,8 +87,8 @@ initialPartition points =
                                          my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross < 0
-                                      where point1 = P.snd p1
-                                            point2 = P.snd p2
+                                      where point1 = p1
+                                            point2 = p2
 
       -- determines which points lie below the line (p₁, p₂)"
       isLower :: Acc (Vector Bool)
@@ -99,8 +99,8 @@ initialPartition points =
                                          my = snd point - snd point1
                                          cross = dx * my - dy * mx
                                      in cross > 0
-                                      where point1 = P.snd p1
-                                            point2 = P.snd p2
+                                      where point1 = p1
+                                            point2 = p2
 
       offsetUpper :: Acc (Vector Int) -- relative index of points above the line
       countUpper  :: Acc (Scalar Int) -- number of points above the line 
@@ -118,17 +118,17 @@ initialPartition points =
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
       destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index)) 
                           else if isLower!index then Just_ (I1 (offsetLower!index)) 
-                          else if point == P.snd p1 then Just_ (I1 0) 
-                          else if point == P.snd p2 then Just_ (I1 (the countUpper + 1)) 
+                          else if point == p1 then Just_ (I1 0) 
+                          else if point == p2 then Just_ (I1 (the countUpper + 1)) 
                           else Nothing_) points
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
       newPoints = permute (\point _ -> point) (fill (constant (Z:.fullSize)) (T2 0 0)) (\ix -> destination!ix) points
-                    where fullSize = P.fromEnum (the countUpper + the countLower + 3)
+                    where fullSize = P.fromEnum (the countUpper + the countLower) + 3
 
       headFlags :: Acc (Vector Bool) -- create head flags array demarcating the initial segments
       headFlags = permute (\true _ -> true) (fill (constant (Z:. fullSize)) False_) (\ix -> destination!ix) (fill (constant (Z:. fullSize)) True_)
-                    where fullSize = P.fromEnum (the countUpper + the countLower + 3)
+                    where fullSize = P.fromEnum (the countUpper + the countLower) + 3
   in
   T2 headFlags newPoints
 
@@ -143,8 +143,9 @@ initialPartition points =
 -- These points are undecided.
 --
 partition :: Acc SegmentedPoints -> Acc SegmentedPoints
-partition (T2 headFlags points) =
-  error "TODO: partition"
+partition (T2 headFlags points) = undefined
+                                     where findP3 = undefined :: (Exp a -> Exp a -> Exp a)
+                                           test = segmentedScanl1 findP3 headFlags points
 
 
 -- The completed algorithm repeatedly partitions the points until there are
