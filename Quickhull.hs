@@ -116,10 +116,10 @@ initialPartition points =
 
       -- p1 -> 0 and size + 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
-      destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index)) 
-                          else if isLower!index then Just_ (I1 (offsetLower!index)) 
-                          else if point == p1 then Just_ (I1 0) 
-                          else if point == p2 then Just_ (I1 (the countUpper + 1)) 
+      destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index))
+                          else if isLower!index then Just_ (I1 (offsetLower!index))
+                          else if point == p1 then Just_ (I1 0)
+                          else if point == p2 then Just_ (I1 (the countUpper + 1))
                           else Nothing_) points
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
@@ -142,10 +142,25 @@ initialPartition points =
 -- These points are undecided.
 --
 partition :: Acc SegmentedPoints -> Acc SegmentedPoints
-partition (T2 headFlags points) = undefined
-                                     where pointDistance :: Exp Point -> Exp Point -> Exp Point -> Exp Int
-                                           pointDistance a b p = abs ((fst a - fst p) * (snd b - snd a) - (fst a - fst b) * (snd p - snd a)) -- neglected (1/2) * because it is irrelevant and doesn't work
-                                           findP3 p1 p2 ps = maximum (map (\x -> pointDistance p1 p2 x) ps)
+partition (T2 headFlags points) = let newPoints = segmentedScanl1 undefined headFlags points
+                                      newFlags = undefined newPoints
+                                  in T2 newFlags newPoints
+                                     where findP3 line ps = maximum (map (\x -> nonNormalizedDistance line x) ps)
+                                           undecidedPoints p1 p2 p3 = map (pointsOutOfLines p1 p2 p3)
+                                                                     
+
+-- returns True if the point is either to the left of (p1, p3) or the right of (p2, p3) and thus undecided
+pointsOutOfLines :: Exp Point -> Exp Point -> Exp Point -> Exp Point -> Exp Bool
+pointsOutOfLines p1 p2 p3 point = pointIsLeftOfLine (T2 p1 p3) point || pointIsRightOfLine (T2 p2 p3) point
+
+-- returns True if the point is to the right of the line, used in pointIsNotOnLine so that points on the line
+pointIsRightOfLine :: Exp Line -> Exp Point -> Exp Bool
+pointIsRightOfLine (T2 (T2 x1 y1) (T2 x2 y2)) (T2 x y) = nx * x + ny * y < c
+  where
+    nx = y1 - y2
+    ny = x2 - x1
+    c  = nx * x1 + ny * y1
+
 
 -- The completed algorithm repeatedly partitions the points until there are
 -- no undecided points remaining. What remains is the convex hull.
