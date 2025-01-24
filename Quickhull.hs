@@ -164,7 +164,7 @@ propagateL :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
 propagateL = segmentedScanl1 const
 
 propagateR :: Elt a => Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-propagateR = segmentedScanr1 (flip const)
+propagateR = segmentedScanr1 const
 
 shiftHeadFlagsL :: Acc (Vector Bool) -> Acc (Vector Bool)
 shiftHeadFlagsL = stencil f boundary
@@ -185,7 +185,7 @@ segmentedScanl1 f headFlags values = map snd (scanl1 (segmented f) tuples)
                                     where tuples = zip headFlags values
 
 segmentedScanr1 :: Elt a => (Exp a -> Exp a -> Exp a) -> Acc (Vector Bool) -> Acc (Vector a) -> Acc (Vector a)
-segmentedScanr1 f headFlags values = map snd (scanr1 (segmented f) tuples)
+segmentedScanr1 f headFlags values = map snd (scanr1 (flip (segmented f)) tuples)
                                     where tuples = zip headFlags values
 
 
