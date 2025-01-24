@@ -116,11 +116,11 @@ initialPartition points =
 
       -- p1 -> 0 and size + 1, p2 -> the countUpper + 1
       destination :: Acc (Vector (Maybe DIM1)) -- compute the index in the result array for each point (if it is present), destination for the permute
-      destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index))
-                          else if isLower!index then Just_ (I1 (offsetLower!index))
+      destination = imap (\index point -> if isUpper!index then Just_ (I1 (offsetUpper!index)) --if the point lies above the line, use the index from offsetUpper
+                          else if isLower!index then Just_ (I1 (offsetLower!index)) --if the point lies below the line, use the index from offsetLower
                           else if point == p1 then Just_ (I1 0) -- currently only has p1 at the start, and not also at the end
-                          else if point == p2 then Just_ (I1 (the countUpper + 1))
-                          else Nothing_) points
+                          else if point == p2 then Just_ (I1 (the countUpper + 1)) --put p2 right after all the points above the line
+                          else Nothing_) points -- points that are on the line are left out
 
       newPoints :: Acc (Vector Point) -- place each point into its corresponding segment of the result
       newPoints = permute (\point _ -> point) (fill (constant (Z:.fullSize)) (T2 0 0)) (\ix -> destination!ix) points
